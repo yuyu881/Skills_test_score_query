@@ -32,12 +32,12 @@ st.sidebar.header("🔍 篩選條件")
 
 # 職類篩選 (下拉選單選項從資料庫撈取，或者寫死常用選項)
 # 這裡採用從 score_records 中的 exam_type 抓出 Distinct 值，或是直接給定預設
-exam_type_options = ["classC (丙級)", "classB (乙級)", "全部 (All)"]
+exam_type_options = ["工業電子丙級", "數位電子乙級", "全部 (All)"]
 selected_type_label = st.sidebar.selectbox("📖 選擇職類", exam_type_options)
 
-if "classC" in selected_type_label:
+if "工業電子丙級" in selected_type_label:
     type_filter = "classC"
-elif "classB" in selected_type_label:
+elif "數位電子乙級" in selected_type_label:
     type_filter = "classB"
 else:
     type_filter = "All"
@@ -88,6 +88,20 @@ df_scores = pd.DataFrame(raw_data)
 # 欄位 mapping: student_id, student_name, exam_score, exam_scope, backend_timestamp
 df_display = df_scores[["student_id", "student_name", "exam_score", "exam_scope", "exam_type", "backend_timestamp"]].copy()
 df_display.columns = ["學號", "姓名", "分數", "測驗範圍", "職類", "繳交時間"]
+
+# 替換職類顯示文字
+df_display["職類"] = df_display["職類"].replace({"classC": "工業電子丙級", "classB": "數位電子乙級"})
+
+# 將分數格式化為小數點後兩位
+def format_score(val):
+    try:
+        if pd.isna(val):
+            return "尚未作答"
+        return f"{float(val):.2f}"
+    except:
+        return val
+
+df_display["分數"] = df_display["分數"].apply(format_score)
 
 # 若時間為 ISO 格式，可轉換為較好讀的字串
 df_display["繳交時間"] = pd.to_datetime(df_display["繳交時間"]).dt.strftime('%Y-%m-%d %H:%M:%S')
