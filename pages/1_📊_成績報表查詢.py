@@ -1,6 +1,6 @@
 """
- 程式功能簡介：Streamlit 後台報表查詢 (V2.2 支援測驗範圍下拉選單與座號排序)
- 程式歷次修改簡說：2026-03-07/V2.2 - 將「測驗範圍」篩選改為自動抓取資料庫內容的下拉選單，避免打錯字問題。
+ 程式功能簡介：Streamlit 後台報表查詢 (V2.3 教師專屬範圍選單與座號排序)
+ 程式歷次修改簡說：2026-03-07/V2.3 - 優化選單：測驗範圍選單僅顯示該教師所屬學生曾經考過的項目，避免看到他班資訊。
  使用的 Pin 腳/IO：無
  建立者：User & Gemini
  最後一次修改日期：2026-03-07
@@ -16,8 +16,8 @@ if "logged_in" not in st.session_state or not st.session_state.logged_in:
     st.warning("請先由首頁登入。")
     st.stop()
 
-st.title("📊 學科測驗成績報表 (V2.2)")
-st.markdown("系統已根據您的教師帳號，自動載入您專屬的學生名單與成績！")
+st.title("📊 學科測驗成績報表 (V2.3)")
+st.markdown("系統已根據您的教師帳號，自動過濾您專屬的學生名單與可選測驗範圍！")
 
 # 初始化 Supabase
 try:
@@ -56,18 +56,29 @@ df_roster["班級"] = df_roster["class_name"]
 df_roster["座號"] = pd.to_numeric(df_roster["seat_number"], errors='coerce').fillna(0).astype(int)
 
 # ----------------------------------------
-# 區塊二：撈取資料庫中現有的「測驗範圍」供選單使用
+# 區塊二：撈取「該教師學生」現有的「測驗範圍」供選單使用
 # ----------------------------------------
 @st.cache_data(ttl=120)
-def fetch_available_scopes():
-    """從 score_records 撈取所有不重複的測驗範圍"""
-    response = supabase.table("score_records").select("exam_scope").execute()
+def fetch_available_scopes_v23(student_ids, r):
+    """
+    從 score_records 撈取不重複的測驗範圍。
+    V2.3 改進：如果不是 Admin，則只撈取 list 中學生的成績範圍。
+    """
+    query = supabase.table("score_records").select("exam_scope")
+    
+    # 如果不是 Admin，則加上學生 ID 過濾 (Supabase .in_ 語法)
+    if r != "admin" and student_ids:
+        query = query.in_("student_id", student_ids)
+        
+    response = query.execute()
     if response.data:
         scopes = sorted(list(set(item["exam_scope"] for item in response.data if item["exam_scope"])))
         return scopes
     return []
 
-available_scopes = fetch_available_scopes()
+# 取得目前名冊中所有學生的 ID 清單
+my_student_ids = df_roster["學號"].tolist()
+available_scopes = fetch_available_scopes_v23(my_student_ids, role)
 
 # ----------------------------------------
 # 區塊三：側邊欄篩選條件
@@ -79,7 +90,7 @@ class_options = ["全部班級 (All)"] + sorted(unique_classes)
 selected_class = st.sidebar.selectbox("🏫 選擇班級預覽", class_options)
 
 exam_type_options = ["工業電子丙級", "數位電子乙級", "全部 (All)"]
-selected_type_label = st.sidebar.selectbox("📖 選擇職類", exam_type_options)
+selected_type_label = st.sidebar.selectbox("📖 選擇職類預閱", exam_type_options)
 
 if "工業電子丙級" in selected_type_label:
     type_filter = "classC"
@@ -88,7 +99,7 @@ elif "數位電子乙級" in selected_type_label:
 else:
     type_filter = "All"
 
-# 【V2.2 更新】：改用 selectbox 而非 text_input
+# 改用 selectbox
 scope_options = ["全部範圍 (All)"] + available_scopes
 selected_scope = st.sidebar.selectbox("📄 選擇測驗範圍", scope_options)
 
