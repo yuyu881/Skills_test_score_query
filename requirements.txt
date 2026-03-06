@@ -1,0 +1,7 @@
+# Frontend Streamlit 儀表板架構
+streamlit
+supabase
+pandas
+python-dotenv
+openpyxl
+bcrypt
