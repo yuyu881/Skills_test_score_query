@@ -97,9 +97,17 @@ df_display["繳交時間"] = pd.to_datetime(df_display["繳交時間"]).dt.strft
 # 區塊三：名單比對 (Upload Excel)
 # ----------------------------------------
 st.subheader("📋 學生繳交狀態比對 (選填)")
-st.info("若您上傳學生名單 (至少包含『學號』與『姓名』欄位)，系統將列出哪些學生尚未完成此範圍的測驗。")
+st.info("""
+**💡 上傳名單自動比對說明：**  
+若您上傳學生名冊，系統會自動幫您過濾出「哪些學生還沒有進行測驗 / 哪些學生不及格」。
 
-uploaded_file = st.file_uploader("上傳 Excel 或 CSV 檔案", type=["xlsx", "csv"])
+**【Excel/CSV 檔案格式要求】**
+1. **必備欄位：** 標題列 (第一列) 必須包含 **名稱為 `學號` 與 `姓名`** 的兩個欄位。
+2. **無順序性：** 欄位順序不拘，系統會自動由名稱抓取。
+3. **其他欄位：** 檔案內若有班級、座號、科系等欄位，可直接保留，比對後會原封不動顯示在畫面上供您參考！
+""")
+
+uploaded_file = st.file_uploader("上傳 Excel 或 CSV 檔案", type=["xlsx", "xls", "csv"])
 
 # 要呈現的最終 DataFrame (預設為全部成績)
 final_df = df_display.copy()
