@@ -1,6 +1,8 @@
 """
  程式功能簡介：Streamlit 後台 - 學生名冊管理 (由 Admin 負責批次匯入包含教師與班級資訊的 Excel)
- 程式歷次修改簡說：2026-03-07/V2.1 - 新增座號 (seat_number) 欄位支援，調整範本欄位順序。
+ 程式歷次修改簡說：
+ 2026-03-07/V2.1 - 新增座號 (seat_number) 欄位支援，調整範本欄位順序。
+ 2026-03-17/V2.2 - 優化 Excel 匯入預覽畫面，明確顯示總筆數並維持前 5 筆預覽。
  使用的 Pin 腳/IO：無
  建立者：User & Gemini
  最後一次修改日期：2026-03-07
@@ -91,8 +93,9 @@ if uploaded_file is not None:
         else:
             st.success("✅ 檔案格式檢查通過，請確認資料後點擊下方按鈕寫入資料庫。")
             
-            # 預覽前 5 筆
-            st.dataframe(df_roster.head(), use_container_width=True)
+            # 預覽前 5 筆與顯示總筆數
+            st.write(f"📂 準備匯入總筆數：**{len(df_roster)}** 筆。以下僅預覽前 5 筆資料：")
+            st.dataframe(df_roster.head(5), use_container_width=True)
             
             # 確認寫入按鈕
             if st.button("🚀 確認匯入並更新至資料庫", type="primary"):
